@@ -1,0 +1,21 @@
+{
+  "name": "convertidor-audio",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theflaco0831-netizen/convertidor-opus-mp3.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/theflaco0831-netizen/convertidor-opus-mp3/issues"
+  },
+  "homepage": "https://github.com/theflaco0831-netizen/convertidor-opus-mp3#readme"
+}
