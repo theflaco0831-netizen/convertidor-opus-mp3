@@ -1,18 +1,16 @@
 const express = require('express');
 const multer = require('multer');
 const ffmpeg = require('fluent-ffmpeg');
-const ffmpegPath = require('ffmpeg-static');
 const fs = require('fs');
-const path = require('path');
 
 const app = express();
 
-// USAR /tmp EN RENDER
+// Render solo permite escribir en /tmp
 const upload = multer({ dest: '/tmp' });
 
-ffmpeg.setFfmpegPath(ffmpegPath);
+// NO ffmpeg-static
+ffmpeg.setFfmpegPath('ffmpeg');
 
-// Servir la página web
 app.use(express.static(__dirname));
 
 app.post('/convert', upload.single('audio'), (req, res) => {
@@ -39,7 +37,6 @@ app.post('/convert', upload.single('audio'), (req, res) => {
         .save(outputPath);
 });
 
-// Render usa PORT automático
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log('Servidor en puerto', PORT);
