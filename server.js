@@ -1,15 +1,15 @@
-const express = require('express');
+onst express = require('express');
 const multer = require('multer');
 const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const fs = require('fs');
 
 const app = express();
 
-// Render solo permite escribir en /tmp
+// Render permite escribir en /tmp
 const upload = multer({ dest: '/tmp' });
 
-// NO ffmpeg-static
-ffmpeg.setFfmpegPath('ffmpeg');
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 app.use(express.static(__dirname));
 
