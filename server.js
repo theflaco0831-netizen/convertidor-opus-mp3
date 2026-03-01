@@ -6,7 +6,13 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
+
+const uploadDir = 'uploads';
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
+
+const upload = multer({ dest: uploadDir });
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 
