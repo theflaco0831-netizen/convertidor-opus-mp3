@@ -54,13 +54,13 @@ form.addEventListener('submit', async (e) => {
 
     const formData = new FormData(form);
 
-    // manda archivo
-    fetch('/convert', {
+    // Enviar archivo
+    const response = await fetch('/convert', {
         method: 'POST',
         body: formData
     });
 
-    // consulta progreso
+    // Leer progreso
     const interval = setInterval(async () => {
         const res = await fetch('/progress');
         const data = await res.json();
@@ -72,6 +72,18 @@ form.addEventListener('submit', async (e) => {
             clearInterval(interval);
         }
     }, 500);
+
+    // Recibir MP3 y descargarlo
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'audio.mp3';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
 });
 </script>
 
