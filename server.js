@@ -11,7 +11,7 @@ const upload = multer({ dest: '/tmp' });
 ffmpeg.setFfmpegPath(ffmpegPath);
 app.use(express.static(__dirname));
 
-const jobs = {};
+const jobs = {}; // { jobId: { progress, outputPath } }
 
 // progreso
 app.get('/progress/:id', (req, res) => {
@@ -19,10 +19,12 @@ app.get('/progress/:id', (req, res) => {
     res.json({ progress: job ? job.progress : 0 });
 });
 
-// descarga
+// descargar
 app.get('/download/:id', (req, res) => {
     const job = jobs[req.params.id];
-    if (!job || job.progress < 100) return res.status(404).send('No listo');
+    if (!job || job.progress < 100) {
+        return res.status(404).send('No listo');
+    }
 
     res.download(job.outputPath, 'audio.mp3', () => {
         fs.unlinkSync(job.inputPath);
@@ -33,37 +35,35 @@ app.get('/download/:id', (req, res) => {
 
 // convertir
 app.post('/convert', upload.single('audio'), (req, res) => {
+    if (!req.file) return res.status(400).send('No se recibió archivo');
+
     const jobId = crypto.randomUUID();
     const inputPath = req.file.path;
     const outputPath = `${inputPath}.mp3`;
 
-    jobs[jobId] = { progress: 0, inputPath, outputPath };
+    jobs[jobId] = {
+        progress: 0,
+        inputPath,
+        outputPath
+    };
 
-    let duration = 0;
+    ffmpeg(inputPath)
+        .toFormat('mp3')
+        .on('progress', p => {
+            if (p.percent) {
+                jobs[jobId].progress = Math.round(p.percent);
+            }
+        })
+        .on('end', () => {
+            jobs[jobId].progress = 100;
+        })
+        .on('error', err => {
+            console.error(err);
+            delete jobs[jobId];
+        })
+        .save(outputPath);
 
-    ffmpeg.ffprobe(inputPath, (err, data) => {
-        duration = data.format.duration;
-
-        ffmpeg(inputPath)
-            .toFormat('mp3')
-            .on('progress', p => {
-                if (p.timemark && duration) {
-                    const parts = p.timemark.split(':');
-                    const seconds = (+parts[0]) * 3600 + (+parts[1]) * 60 + parseFloat(parts[2]);
-                    const percent = Math.min(100, Math.round((seconds / duration) * 100));
-                    jobs[jobId].progress = percent;
-                }
-            })
-            .on('end', () => {
-                jobs[jobId].progress = 100;
-            })
-            .on('error', err => {
-                console.error(err);
-                delete jobs[jobId];
-            })
-            .save(outputPath);
-    });
-
+    // RESPUESTA INMEDIATA
     res.json({ jobId });
 });
 

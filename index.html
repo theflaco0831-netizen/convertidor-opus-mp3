@@ -1,8 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Convertidor OPUS a MP3</title>
+    <style>
+        body { font-family: Arial; text-align: center; margin-top: 50px; }
+        #progress-container { width: 300px; background: #ddd; margin: 20px auto; border-radius: 20px; overflow: hidden; }
+        #progress-bar { width: 0%; height: 20px; background: green; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+
+<h2>Convertir OPUS a MP3</h2>
+
+<form id="form">
+    <input type="file" name="audio" id="fileInput" accept=".opus" required>
+    <br><br>
+    <button type="submit">Convertir</button>
+</form>
+
+<div id="progress-container">
+    <div id="progress-bar"></div>
+</div>
+
+<p id="percent">0%</p>
+<p id="status"></p>
+
 <script>
 const form = document.getElementById('form');
 const bar = document.getElementById('progress-bar');
 const percent = document.getElementById('percent');
 const status = document.getElementById('status');
+const fileInput = document.getElementById('fileInput');
+
+let jobId = null;
+let interval = null;
+
+fileInput.addEventListener('change', () => {
+    bar.style.width = '0%';
+    percent.textContent = '0%';
+    status.textContent = '';
+});
 
 form.addEventListener('submit', async e => {
     e.preventDefault();
@@ -13,9 +50,10 @@ form.addEventListener('submit', async e => {
 
     const formData = new FormData(form);
     const res = await fetch('/convert', { method: 'POST', body: formData });
-    const { jobId } = await res.json();
+    const data = await res.json();
+    jobId = data.jobId;
 
-    const interval = setInterval(async () => {
+    interval = setInterval(async () => {
         const r = await fetch('/progress/' + jobId);
         const p = await r.json();
 
@@ -30,3 +68,6 @@ form.addEventListener('submit', async e => {
     }, 500);
 });
 </script>
+
+</body>
+</html>
