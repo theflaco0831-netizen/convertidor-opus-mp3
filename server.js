@@ -13,6 +13,14 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 
 app.use(express.static(__dirname));
 
+// variable global de progreso
+let progressValue = 0;
+
+// endpoint para leer progreso
+app.get('/progress', (req, res) => {
+    res.json({ progress: progressValue });
+});
+
 app.post('/convert', upload.single('audio'), (req, res) => {
 
     if (!req.file) {
@@ -22,9 +30,17 @@ app.post('/convert', upload.single('audio'), (req, res) => {
     const inputPath = req.file.path;
     const outputPath = `${inputPath}.mp3`;
 
+    progressValue = 0;
+
     ffmpeg(inputPath)
         .toFormat('mp3')
+        .on('progress', (p) => {
+            if (p.percent) {
+                progressValue = Math.round(p.percent);
+            }
+        })
         .on('end', () => {
+            progressValue = 100;
             res.download(outputPath, 'audio.mp3', () => {
                 fs.unlinkSync(inputPath);
                 fs.unlinkSync(outputPath);
