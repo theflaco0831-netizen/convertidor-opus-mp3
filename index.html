@@ -1,110 +1,32 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Convertidor OPUS a MP3</title>
-    <style>
-        body {
-            font-family: Arial;
-            text-align: center;
-            margin-top: 50px;
-        }
-        #progress-container {
-            width: 300px;
-            background: #ddd;
-            margin: 20px auto;
-            border-radius: 20px;
-            overflow: hidden;
-        }
-        #progress-bar {
-            width: 0%;
-            height: 20px;
-            background: green;
-            transition: width 0.3s;
-        }
-        #status {
-            margin-top: 10px;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-
-<h2>Convertir OPUS a MP3</h2>
-
-<form id="form">
-    <input type="file" id="fileInput" name="audio" accept=".opus" required>
-    <br><br>
-    <button type="submit">Convertir</button>
-</form>
-
-<div id="progress-container">
-    <div id="progress-bar"></div>
-</div>
-
-<p id="percent">0%</p>
-<p id="status"></p>
-
 <script>
 const form = document.getElementById('form');
 const bar = document.getElementById('progress-bar');
-const percentText = document.getElementById('percent');
-const statusText = document.getElementById('status');
-const fileInput = document.getElementById('fileInput');
+const percent = document.getElementById('percent');
+const status = document.getElementById('status');
 
-let interval;
-let jobId = null;
-
-// reset visual al elegir nuevo archivo
-fileInput.addEventListener('change', () => {
-    bar.style.width = '0%';
-    percentText.textContent = '0%';
-    statusText.textContent = '';
-});
-
-form.addEventListener('submit', async (e) => {
+form.addEventListener('submit', async e => {
     e.preventDefault();
 
+    status.textContent = 'Convirtiendo…';
     bar.style.width = '0%';
-    percentText.textContent = '0%';
-    statusText.textContent = 'Convirtiendo…';
+    percent.textContent = '0%';
 
     const formData = new FormData(form);
+    const res = await fetch('/convert', { method: 'POST', body: formData });
+    const { jobId } = await res.json();
 
-    const response = await fetch('/convert', {
-        method: 'POST',
-        body: formData
-    });
+    const interval = setInterval(async () => {
+        const r = await fetch('/progress/' + jobId);
+        const p = await r.json();
 
-    // leer job id del header
-    jobId = response.headers.get('X-Job-Id');
+        bar.style.width = p.progress + '%';
+        percent.textContent = p.progress + '%';
 
-    if (interval) clearInterval(interval);
-
-    interval = setInterval(async () => {
-        const res = await fetch('/progress/' + jobId);
-        const data = await res.json();
-
-        bar.style.width = data.progress + '%';
-        percentText.textContent = data.progress + '%';
-
-        if (data.progress >= 100) {
+        if (p.progress >= 100) {
             clearInterval(interval);
-            statusText.textContent = 'Completado';
+            status.textContent = 'Descargando…';
+            window.location = '/download/' + jobId;
         }
     }, 500);
-
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'audio.mp3';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
 });
 </script>
-
-</body>
-</html>
