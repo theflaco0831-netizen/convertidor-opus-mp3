@@ -8,7 +8,6 @@
             text-align: center;
             margin-top: 50px;
         }
-
         #progress-container {
             width: 300px;
             background: #ddd;
@@ -16,14 +15,12 @@
             border-radius: 20px;
             overflow: hidden;
         }
-
         #progress-bar {
             width: 0%;
             height: 20px;
             background: green;
             transition: width 0.3s;
         }
-
         #status {
             margin-top: 10px;
             font-weight: bold;
@@ -55,8 +52,9 @@ const statusText = document.getElementById('status');
 const fileInput = document.getElementById('fileInput');
 
 let interval;
+let jobId = null;
 
-// 👉 cuando eliges un archivo nuevo, resetea la barra
+// reset visual al elegir nuevo archivo
 fileInput.addEventListener('change', () => {
     bar.style.width = '0%';
     percentText.textContent = '0%';
@@ -72,18 +70,18 @@ form.addEventListener('submit', async (e) => {
 
     const formData = new FormData(form);
 
-    // Enviar archivo
-    const convertPromise = fetch('/convert', {
+    const response = await fetch('/convert', {
         method: 'POST',
         body: formData
     });
 
-    // Limpiar intervalos anteriores si existen
+    // leer job id del header
+    jobId = response.headers.get('X-Job-Id');
+
     if (interval) clearInterval(interval);
 
-    // Consultar progreso
     interval = setInterval(async () => {
-        const res = await fetch('/progress');
+        const res = await fetch('/progress/' + jobId);
         const data = await res.json();
 
         bar.style.width = data.progress + '%';
@@ -95,11 +93,9 @@ form.addEventListener('submit', async (e) => {
         }
     }, 500);
 
-    // Recibir mp3
-    const response = await convertPromise;
     const blob = await response.blob();
-
     const url = window.URL.createObjectURL(blob);
+
     const a = document.createElement('a');
     a.href = url;
     a.download = 'audio.mp3';

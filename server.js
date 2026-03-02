@@ -3,22 +3,21 @@ const multer = require('multer');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const fs = require('fs');
+const crypto = require('crypto');
 
 const app = express();
-
-// Render permite escribir en /tmp
 const upload = multer({ dest: '/tmp' });
 
 ffmpeg.setFfmpegPath(ffmpegPath);
-
 app.use(express.static(__dirname));
 
-// variable global de progreso
-let progressValue = 0;
+// 🔹 progreso por trabajo
+const progressMap = {};
 
-// endpoint para leer progreso
-app.get('/progress', (req, res) => {
-    res.json({ progress: progressValue });
+// endpoint para leer progreso por id
+app.get('/progress/:id', (req, res) => {
+    const id = req.params.id;
+    res.json({ progress: progressMap[id] || 0 });
 });
 
 app.post('/convert', upload.single('audio'), (req, res) => {
@@ -27,27 +26,32 @@ app.post('/convert', upload.single('audio'), (req, res) => {
         return res.status(400).send('No se recibió archivo');
     }
 
+    const jobId = crypto.randomUUID();
     const inputPath = req.file.path;
     const outputPath = `${inputPath}.mp3`;
 
-    progressValue = 0;
+    progressMap[jobId] = 0;
 
     ffmpeg(inputPath)
         .toFormat('mp3')
         .on('progress', (p) => {
             if (p.percent) {
-                progressValue = Math.round(p.percent);
+                progressMap[jobId] = Math.round(p.percent);
             }
         })
         .on('end', () => {
-            progressValue = 100;
+            progressMap[jobId] = 100;
+
+            res.setHeader('X-Job-Id', jobId);
             res.download(outputPath, 'audio.mp3', () => {
                 fs.unlinkSync(inputPath);
                 fs.unlinkSync(outputPath);
+                delete progressMap[jobId]; // limpiar memoria
             });
         })
         .on('error', (err) => {
             console.error('FFMPEG ERROR:', err);
+            delete progressMap[jobId];
             res.status(500).send('Error al convertir');
         })
         .save(outputPath);
