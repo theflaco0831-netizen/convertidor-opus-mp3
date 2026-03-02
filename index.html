@@ -68,13 +68,21 @@ form.addEventListener('submit', async e => {
             if (p.progress >= 100) {
                 clearInterval(interval);
                 status.textContent = 'Descargando…';
-                window.open('/download/' + jobId);
 
-                setTimeout(() => {
-                    bar.style.width = '0%';
-                    percent.textContent = '0%';
-                    status.textContent = 'Listo ✔️';
-                }, 1000);
+                // ⬇️ DESCARGA REAL
+                const fileRes = await fetch('/download/' + jobId);
+                const blob = await fileRes.blob();
+
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name.replace('.opus', '.mp3');
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+                status.textContent = 'Listo ✔️';
             }
         }, 500);
     }
