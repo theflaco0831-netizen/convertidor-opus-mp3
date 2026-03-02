@@ -23,6 +23,11 @@
             background: green;
             transition: width 0.3s;
         }
+
+        #status {
+            margin-top: 10px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -40,27 +45,30 @@
 </div>
 
 <p id="percent">0%</p>
+<p id="status"></p>
 
 <script>
 const form = document.getElementById('form');
 const bar = document.getElementById('progress-bar');
 const percentText = document.getElementById('percent');
+const statusText = document.getElementById('status');
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     bar.style.width = '0%';
     percentText.textContent = '0%';
+    statusText.textContent = 'Convirtiendo…';
 
     const formData = new FormData(form);
 
-    // 👉 enviamos el archivo (NO await todavía)
+    // Enviamos archivo
     const convertPromise = fetch('/convert', {
         method: 'POST',
         body: formData
     });
 
-    // 👉 empezamos a consultar progreso de inmediato
+    // Consultamos progreso
     const interval = setInterval(async () => {
         const res = await fetch('/progress');
         const data = await res.json();
@@ -70,10 +78,11 @@ form.addEventListener('submit', async (e) => {
 
         if (data.progress >= 100) {
             clearInterval(interval);
+            statusText.textContent = 'Completado';
         }
     }, 500);
 
-    // 👉 ahora esperamos la respuesta (el mp3)
+    // Recibimos mp3
     const response = await convertPromise;
     const blob = await response.blob();
 
