@@ -54,13 +54,13 @@ form.addEventListener('submit', async (e) => {
 
     const formData = new FormData(form);
 
-    // Enviar archivo
-    const response = await fetch('/convert', {
+    // 👉 enviamos el archivo (NO await todavía)
+    const convertPromise = fetch('/convert', {
         method: 'POST',
         body: formData
     });
 
-    // Leer progreso
+    // 👉 empezamos a consultar progreso de inmediato
     const interval = setInterval(async () => {
         const res = await fetch('/progress');
         const data = await res.json();
@@ -73,10 +73,11 @@ form.addEventListener('submit', async (e) => {
         }
     }, 500);
 
-    // Recibir MP3 y descargarlo
+    // 👉 ahora esperamos la respuesta (el mp3)
+    const response = await convertPromise;
     const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
 
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'audio.mp3';
