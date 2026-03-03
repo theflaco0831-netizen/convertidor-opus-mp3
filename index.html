@@ -22,9 +22,31 @@
             background: #f0fff0;
         }
 
-        .item { width: 300px; margin: 10px auto; }
+        .item {
+            width: 320px;
+            margin: 10px auto;
+            position: relative;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+
         .bar-container { width: 100%; background: #ddd; border-radius: 20px; overflow: hidden; }
         .bar { width: 0%; height: 20px; background: green; transition: width 0.3s; }
+
+        .remove {
+            position: absolute;
+            right: 6px;
+            top: 6px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -35,7 +57,7 @@
 <br>
 
 <form id="form">
-    <input type="file" id="fileInput" accept=".opus" multiple required>
+    <input type="file" id="fileInput" accept=".opus" multiple>
     <br><br>
     <button type="submit">Convertir</button>
 </form>
@@ -50,7 +72,7 @@ const dropZone = document.getElementById('dropZone');
 
 let cola = [];
 
-/* ================= DRAG & DROP ================= */
+/* ===== DRAG & DROP ===== */
 dropZone.addEventListener('dragover', e => {
     e.preventDefault();
     dropZone.classList.add('dragover');
@@ -65,48 +87,53 @@ dropZone.addEventListener('drop', e => {
     dropZone.classList.remove('dragover');
 
     for (let file of e.dataTransfer.files) {
-        if (file.name.endsWith('.opus')) {
-            cola.push(file);
-            crearUI(file);
-        }
+        if (file.name.endsWith('.opus')) agregarArchivo(file);
     }
 });
 
-/* ================= FILE INPUT ================= */
+/* ===== FILE INPUT ===== */
 fileInput.addEventListener('change', () => {
-    for (let file of fileInput.files) {
-        cola.push(file);
-        crearUI(file);
-    }
+    for (let file of fileInput.files) agregarArchivo(file);
 });
 
-/* ================= BOTÓN ================= */
+/* ===== BOTÓN ===== */
 form.addEventListener('submit', e => {
     e.preventDefault();
+
     for (let file of cola) {
         procesarArchivo(file);
+        file.ui.querySelector('.remove').disabled = true;
     }
+
     cola = [];
 });
 
-/* ================= UI ================= */
-function crearUI(file) {
+/* ===== AGREGAR ===== */
+function agregarArchivo(file) {
+    cola.push(file);
+
     const item = document.createElement('div');
     item.className = 'item';
     item.innerHTML = `
+        <button class="remove">✖</button>
         <b>${file.name}</b>
         <div class="bar-container">
             <div class="bar"></div>
         </div>
         <p class="percent">0%</p>
         <p class="status">Esperando…</p>
-        <hr>
     `;
+
     list.appendChild(item);
     file.ui = item;
+
+    item.querySelector('.remove').onclick = () => {
+        cola = cola.filter(f => f !== file);
+        item.remove();
+    };
 }
 
-/* ================= PROCESAR ================= */
+/* ===== PROCESAR ===== */
 function procesarArchivo(file) {
 
     const bar = file.ui.querySelector('.bar');
@@ -118,10 +145,7 @@ function procesarArchivo(file) {
     const formData = new FormData();
     formData.append('audio', file);
 
-    fetch('/convert', {
-        method: 'POST',
-        body: formData
-    })
+    fetch('/convert', { method: 'POST', body: formData })
     .then(res => res.json())
     .then(data => {
         const jobId = data.jobId;
