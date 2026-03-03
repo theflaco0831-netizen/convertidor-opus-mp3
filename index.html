@@ -3,7 +3,25 @@
 <head>
     <title>Convertidor OPUS a MP3</title>
     <style>
-        body { font-family: Arial; text-align: center; margin-top: 50px; }
+        body { font-family: Arial; text-align: center; margin-top: 40px; }
+
+        #dropZone {
+            width: 400px;
+            height: 120px;
+            margin: auto;
+            border: 3px dashed #aaa;
+            border-radius: 15px;
+            line-height: 120px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        #dropZone.dragover {
+            border-color: green;
+            color: green;
+            background: #f0fff0;
+        }
+
         .item { width: 300px; margin: 10px auto; }
         .bar-container { width: 100%; background: #ddd; border-radius: 20px; overflow: hidden; }
         .bar { width: 0%; height: 20px; background: green; transition: width 0.3s; }
@@ -12,6 +30,9 @@
 <body>
 
 <h2>Convertir OPUS a MP3</h2>
+
+<div id="dropZone">Arrastra archivos OPUS aquí</div>
+<br>
 
 <form id="form">
     <input type="file" id="fileInput" accept=".opus" multiple required>
@@ -25,20 +46,51 @@
 const form = document.getElementById('form');
 const list = document.getElementById('list');
 const fileInput = document.getElementById('fileInput');
+const dropZone = document.getElementById('dropZone');
 
-form.addEventListener('submit', e => {
+let cola = [];
+
+/* ================= DRAG & DROP ================= */
+dropZone.addEventListener('dragover', e => {
     e.preventDefault();
-    list.innerHTML = '';
+    dropZone.classList.add('dragover');
+});
 
-    const files = fileInput.files;
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+});
 
-    for (let i = 0; i < files.length; i++) {
-        procesarArchivo(files[i]);
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+
+    for (let file of e.dataTransfer.files) {
+        if (file.name.endsWith('.opus')) {
+            cola.push(file);
+            crearUI(file);
+        }
     }
 });
 
-function procesarArchivo(file) {
+/* ================= FILE INPUT ================= */
+fileInput.addEventListener('change', () => {
+    for (let file of fileInput.files) {
+        cola.push(file);
+        crearUI(file);
+    }
+});
 
+/* ================= BOTÓN ================= */
+form.addEventListener('submit', e => {
+    e.preventDefault();
+    for (let file of cola) {
+        procesarArchivo(file);
+    }
+    cola = [];
+});
+
+/* ================= UI ================= */
+function crearUI(file) {
     const item = document.createElement('div');
     item.className = 'item';
     item.innerHTML = `
@@ -47,14 +99,21 @@ function procesarArchivo(file) {
             <div class="bar"></div>
         </div>
         <p class="percent">0%</p>
-        <p class="status">Convirtiendo…</p>
+        <p class="status">Esperando…</p>
         <hr>
     `;
     list.appendChild(item);
+    file.ui = item;
+}
 
-    const bar = item.querySelector('.bar');
-    const percent = item.querySelector('.percent');
-    const status = item.querySelector('.status');
+/* ================= PROCESAR ================= */
+function procesarArchivo(file) {
+
+    const bar = file.ui.querySelector('.bar');
+    const percent = file.ui.querySelector('.percent');
+    const status = file.ui.querySelector('.status');
+
+    status.textContent = 'Convirtiendo…';
 
     const formData = new FormData();
     formData.append('audio', file);
