@@ -1,68 +1,133 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Convertidor OPUS a MP3</title>
-    <style>
-        body { font-family: Arial; text-align: center; margin-top: 40px; }
+<meta charset="UTF-8">
+<title>Convertidor OPUS a MP3</title>
 
-        #dropZone {
-            width: 400px;
-            height: 120px;
-            margin: auto;
-            border: 3px dashed #aaa;
-            border-radius: 15px;
-            line-height: 120px;
-            font-size: 18px;
-            color: #666;
-        }
+<style>
+* { box-sizing: border-box; }
 
-        #dropZone.dragover {
-            border-color: green;
-            color: green;
-            background: #f0fff0;
-        }
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    min-height: 100vh;
+    margin: 0;
+    padding: 30px;
+    color: white;
+}
 
-        .item {
-            width: 320px;
-            margin: 10px auto;
-            position: relative;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-        }
+h2 {
+    margin-bottom: 15px;
+}
 
-        .bar-container { width: 100%; background: #ddd; border-radius: 20px; overflow: hidden; }
-        .bar { width: 0%; height: 20px; background: green; transition: width 0.3s; }
+#app {
+    background: #ffffff10;
+    padding: 20px;
+    border-radius: 20px;
+    max-width: 500px;
+    margin: auto;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px #00000050;
+}
 
-        .remove {
-            position: absolute;
-            right: 6px;
-            top: 6px;
-            background: red;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-    </style>
+#dropZone {
+    border: 2px dashed #aaa;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: 0.3s;
+}
+
+#dropZone.dragover {
+    border-color: #00ffcc;
+    color: #00ffcc;
+    background: #ffffff10;
+}
+
+input, button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 12px;
+    border: none;
+    margin-top: 10px;
+}
+
+button {
+    background: #00ffcc;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #00ccaa;
+}
+
+.item {
+    background: #ffffff15;
+    border-radius: 15px;
+    padding: 10px;
+    margin-top: 10px;
+    position: relative;
+    animation: fade 0.4s;
+}
+
+@keyframes fade {
+    from {opacity:0; transform:scale(.9);}
+    to {opacity:1;}
+}
+
+.bar-container {
+    width: 100%;
+    background: #444;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.bar {
+    height: 18px;
+    width: 0%;
+    background: linear-gradient(90deg,#00ffcc,#00ffaa);
+    transition: width 0.4s;
+}
+
+.remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: red;
+    border: none;
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.percent, .status {
+    margin: 4px 0;
+    font-size: 13px;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Convertir OPUS a MP3</h2>
+<div id="app">
 
-<div id="dropZone">Arrastra archivos OPUS aquí</div>
-<br>
+<h2>🎵 Convertir OPUS a MP3</h2>
+
+<div id="dropZone">📂 Arrastra archivos OPUS aquí</div>
 
 <form id="form">
     <input type="file" id="fileInput" accept=".opus" multiple>
-    <br><br>
     <button type="submit">Convertir</button>
 </form>
 
 <div id="list"></div>
+
+</div>
 
 <script>
 const form = document.getElementById('form');
@@ -72,7 +137,7 @@ const dropZone = document.getElementById('dropZone');
 
 let cola = [];
 
-/* ===== DRAG & DROP ===== */
+/* DRAG & DROP */
 dropZone.addEventListener('dragover', e => {
     e.preventDefault();
     dropZone.classList.add('dragover');
@@ -91,12 +156,12 @@ dropZone.addEventListener('drop', e => {
     }
 });
 
-/* ===== FILE INPUT ===== */
+/* FILE INPUT */
 fileInput.addEventListener('change', () => {
     for (let file of fileInput.files) agregarArchivo(file);
 });
 
-/* ===== BOTÓN ===== */
+/* BOTÓN */
 form.addEventListener('submit', e => {
     e.preventDefault();
 
@@ -108,7 +173,7 @@ form.addEventListener('submit', e => {
     cola = [];
 });
 
-/* ===== AGREGAR ===== */
+/* AGREGAR */
 function agregarArchivo(file) {
     cola.push(file);
 
@@ -133,7 +198,7 @@ function agregarArchivo(file) {
     };
 }
 
-/* ===== PROCESAR ===== */
+/* PROCESAR */
 function procesarArchivo(file) {
 
     const bar = file.ui.querySelector('.bar');
