@@ -32,12 +32,12 @@ form.addEventListener('submit', e => {
 
     const files = fileInput.files;
 
-    for (let file of files) {
-        procesarArchivo(file);
+    for (let i = 0; i < files.length; i++) {
+        procesarArchivo(files[i]);
     }
 });
 
-async function procesarArchivo(file) {
+function procesarArchivo(file) {
 
     const item = document.createElement('div');
     item.className = 'item';
@@ -59,40 +59,43 @@ async function procesarArchivo(file) {
     const formData = new FormData();
     formData.append('audio', file);
 
-    const res = await fetch('/convert', {
+    fetch('/convert', {
         method: 'POST',
         body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        const jobId = data.jobId;
+
+        const interval = setInterval(() => {
+            fetch('/progress/' + jobId)
+            .then(r => r.json())
+            .then(p => {
+                bar.style.width = p.progress + '%';
+                percent.textContent = p.progress + '%';
+
+                if (p.progress >= 100) {
+                    clearInterval(interval);
+                    status.textContent = 'Descargando…';
+
+                    fetch('/download/' + jobId)
+                    .then(r => r.blob())
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = file.name.replace('.opus', '.mp3');
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        URL.revokeObjectURL(url);
+
+                        status.textContent = 'Listo ✔️';
+                    });
+                }
+            });
+        }, 500);
     });
-
-    const data = await res.json();
-    const jobId = data.jobId;
-
-    const interval = setInterval(async () => {
-        const r = await fetch('/progress/' + jobId);
-        const p = await r.json();
-
-        bar.style.width = p.progress + '%';
-        percent.textContent = p.progress + '%';
-
-        if (p.progress >= 100) {
-            clearInterval(interval);
-            status.textContent = 'Descargando…';
-
-            const fileRes = await fetch('/download/' + jobId);
-            const blob = await fileRes.blob();
-
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = file.name.replace('.opus', '.mp3');
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-
-            status.textContent = 'Listo ✔️';
-        }
-    }, 500);
 }
 </script>
 
